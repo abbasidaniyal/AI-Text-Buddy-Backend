@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies into build directory
         run: |
-          uv pip install .[lambda] -t build
+          uv pip install --target build .[lambda]
 
       - name: Create deployment package
         run: |

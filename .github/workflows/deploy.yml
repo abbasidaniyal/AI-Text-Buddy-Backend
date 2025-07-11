@@ -19,15 +19,16 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
-        run: |
-          uv pip install .[lambda]
+      # - name: Install dependencies
+      #   run: |
+      #     uv venv
+      #     uv pip install .[lambda]
 
       - name: Prepare build directory
         run: |
           mkdir -p build
           cp -r *.py build/
-          cp -r your_package_if_any build/ || true
+          cp -r src build/ || true
 
       - name: Install dependencies into build directory
         run: |

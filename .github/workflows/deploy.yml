@@ -1,0 +1,58 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Lambda
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv pip install .[lambda]
+
+      - name: Prepare build directory
+        run: |
+          mkdir -p build
+          cp -r *.py build/
+          cp -r your_package_if_any build/ || true
+
+      - name: Install dependencies into build directory
+        run: |
+          uv pip install .[lambda] -t build
+
+      - name: Create deployment package
+        run: |
+          cd build
+          zip -r ../lambda.zip .
+
+      - name: Upload package to S3
+        run: |
+          aws s3 cp lambda.zip s3://ai-text-buddy-lambda-deployments/lambda.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Update Lambda function code
+        run: |
+          aws lambda update-function-code \
+            --function-name YOUR_LAMBDA_FUNCTION_NAME \
+            --s3-bucket ai-text-buddy-lambda-deployments \
+            --s3-key lambda.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
